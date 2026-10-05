@@ -24,6 +24,13 @@ RUN mkdir -p /usr/local/gcc-9.2.0/bin \
     && ln -s /usr/lib/x86_64-linux-gnu /usr/local/gcc-9.2.0/lib64 \
     && ln -s /usr/lib/jvm/java-17-openjdk-amd64 /usr/local/jdk17
 
+# ── 1b. Python lab packages ─────────────────────────────────────────────────
+# The sandbox has no network, so every third-party library has to be here.
+# Rebuild this image when the list changes.
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pip \
+    && python3 -m pip install --no-cache-dir numpy matplotlib pandas \
+    && rm -rf /var/lib/apt/lists/*
+
 # ── 2. Node.js 20 (app runtime) ────────────────────────────────────────────
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
       | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg \

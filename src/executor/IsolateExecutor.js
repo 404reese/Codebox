@@ -245,6 +245,7 @@ class IsolateExecutor {
       '--env=PATH=/usr/local/bin:/usr/bin:/bin',
       '--env=HOME=/box',
       '--env=LANG=C.UTF-8',
+      '--env=MPLBACKEND=Agg',
     ];
 
     if (stdinFile) {

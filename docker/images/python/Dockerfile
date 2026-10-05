@@ -9,8 +9,9 @@ RUN mkdir -p /box && chown runner:runner /box
 # Install additional tools
 RUN apt-get update && apt-get install -y --no-install-recommends unzip && rm -rf /var/lib/apt/lists/*
 
-# Install common packages
-RUN pip install --no-cache-dir numpy
+# Install common packages. Matplotlib draws without a display.
+ENV MPLBACKEND=Agg
+RUN pip install --no-cache-dir numpy matplotlib pandas
 
 # Set working directory
 WORKDIR /box
