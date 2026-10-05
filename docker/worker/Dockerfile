@@ -75,7 +75,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 COPY src/ ./src/
 COPY docker/worker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "src/index.js"]
