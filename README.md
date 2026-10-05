@@ -15,7 +15,7 @@ CodeBox is a self-hosted code execution service that powers the coding challenge
 - **Judge0 API Compatible** - Drop-in replacement, works with existing integrations
 - **Dual Execution Engines** - Firecracker microVMs (125ms) or Docker containers (500ms)
 - **Auto-Detection** - Automatically picks the fastest available executor
-- **5 Languages** - Python, JavaScript, C, C++, Java (easily extensible)
+- **6 Languages** - Python, JavaScript, TypeScript, C, C++, Java (easily extensible)
 - **Batch Submissions** - Run multiple test cases in one request
 - **Production Ready** - Redis queue, Prometheus metrics, auto-SSL with Caddy
 
@@ -474,6 +474,17 @@ an Apple Silicon Mac.
 | 62 | Java (OpenJDK 17) | `codebox/java:17` |
 | 63 | JavaScript (Node 18) | `codebox/node:18` |
 | 71 | Python (3.8) | `codebox/python:3.8` |
+| 74 | TypeScript (5.0.3) | `codebox/typescript:5` |
+| 89 | Multi-file program | `codebox/multi:latest` |
+
+These Judge0 CE language IDs are aliases. A submission with one of them runs the language in the right-hand column.
+
+| Alias ID | Runs as |
+|----------|---------|
+| 92 | Python (71) |
+| 93 | JavaScript (63) |
+| 94 | TypeScript (74) |
+| 102 | JavaScript (63) |
 
 ---
 
