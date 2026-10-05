@@ -110,6 +110,8 @@ whole deployment is one file plus a `.env`.
 
 On a fresh server with Docker installed:
 
+**Linux / VPS (Bash):**
+
 ```bash
 mkdir -p /opt/codebox && cd /opt/codebox
 
@@ -140,6 +142,49 @@ chmod 600 .env
 
 docker compose pull
 docker compose up -d
+```
+
+**Windows (PowerShell):**
+
+Start Docker Desktop and wait for its Linux engine to run. Use a fresh folder;
+the commands below create a new `.env` and replace any existing one.
+Docker Desktop must have enough CPU and memory allocated for the stack.
+
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\codebox-deploy" | Out-Null
+Set-Location "$env:USERPROFILE\codebox-deploy"
+
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/404reese/Codebox/main/docker-compose.hub.yml" -OutFile docker-compose.yml
+
+# Generate secrets without requiring OpenSSL
+function New-CodeboxSecret([int]$Length) {
+    $bytes = New-Object byte[] $Length
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+    return ([BitConverter]::ToString($bytes)).Replace('-', '').ToLowerInvariant()
+}
+
+@"
+CODEBOX_IMAGE_NAMESPACE=riddheshc
+CODEBOX_VERSION=python-libs-v1
+
+AUTH_TOKEN=$(New-CodeboxSecret 32)
+METRICS_TOKEN=$(New-CodeboxSecret 16)
+GRAFANA_PASSWORD=$(New-CodeboxSecret 16)
+
+DOMAIN=
+
+WORKER_CPUS=1.5
+WORKER_MEMORY=4G
+WORKER_CONCURRENCY=2
+"@ | Set-Content -Path .env -Encoding ascii
+
+docker compose pull
+docker compose up -d
+docker compose ps
+docker compose exec worker python3 -c "import numpy, pandas, matplotlib; print('All libraries available')"
+Invoke-RestMethod -Uri "http://localhost/health"
+Select-String -Path .env -Pattern '^AUTH_TOKEN='
 ```
 
 Then check it and grab your token:
