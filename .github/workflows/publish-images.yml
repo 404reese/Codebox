@@ -8,8 +8,7 @@ name: Publish images
 #                       (a token, not your password - scope: Read & Write)
 #
 # Images are built for linux/amd64 only: docker/worker/Dockerfile hardcodes
-# x86_64-linux-gnu and java-17-openjdk-amd64 paths, and every mainstream VPS
-# is amd64 anyway.
+# x86_64-linux-gnu and java-17-openjdk-amd64 paths. ARM VPS hosts need changes.
 
 on:
   push:
@@ -18,7 +17,7 @@ on:
   workflow_dispatch:
 
 env:
-  NAMESPACE: hiteshchoudhary
+  NAMESPACE: riddheshc
 
 jobs:
   publish:

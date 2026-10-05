@@ -37,7 +37,7 @@ services:
           memory: ${CADDY_MEMORY:-128M}
 
   api:
-    image: ${CODEBOX_IMAGE_NAMESPACE:-hiteshchoudhary}/codebox-api:${CODEBOX_VERSION:-latest}
+    image: ${CODEBOX_IMAGE_NAMESPACE:-riddheshc}/codebox-api:${CODEBOX_VERSION:-python-libs-v1}
     environment:
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
@@ -55,7 +55,7 @@ services:
           memory: ${API_MEMORY:-256M}
 
   worker:
-    image: ${CODEBOX_IMAGE_NAMESPACE:-hiteshchoudhary}/codebox-worker:${CODEBOX_VERSION:-latest}
+    image: ${CODEBOX_IMAGE_NAMESPACE:-riddheshc}/codebox-worker:${CODEBOX_VERSION:-python-libs-v1}
     command: node src/queue/worker.js
     privileged: true
     # isolate writes to /sys/fs/cgroup/cgroup.subtree_control; the host cgroup

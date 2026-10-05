@@ -1,14 +1,14 @@
-# CodeBox | ChaiCode
+# CodeBox
 
-**A blazing-fast, Judge0-compatible code execution engine built for the ChaiCode platform.**
+**A self-hosted, Judge0-compatible code execution engine.**
 
-> Part of the [ChaiCode](https://chaicode.com) ecosystem - Home for Programmers
+<small>Forked from [Hitesh Choudhary's CodeBox](https://github.com/hiteshchoudhary/Codebox).</small>
 
 ---
 
 ## What is CodeBox?
 
-CodeBox is a self-hosted code execution service that powers the coding challenges and practice problems on ChaiCode. It securely runs user-submitted code in isolated environments and returns the results - just like LeetCode or HackerRank.
+CodeBox is a self-hosted code execution service for coding challenges and practice problems. It securely runs user-submitted code in isolated environments and returns the results - just like LeetCode or HackerRank.
 
 ### Key Features
 
@@ -25,7 +25,7 @@ CodeBox is a self-hosted code execution service that powers the coding challenge
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   ChaiCode   │────▶│   CodeBox    │────▶│    Redis     │────▶│   Workers    │
+│    Client    │────▶│   CodeBox    │────▶│    Redis     │────▶│   Workers    │
 │   Frontend   │     │     API      │     │    Queue     │     │              │
 └──────────────┘     └──────────────┘     └──────────────┘     └──────┬───────┘
                                                                       │
@@ -73,7 +73,7 @@ No domain, no reverse proxy, no SSL.
 **Prerequisites:** Docker Desktop, Node.js 20+
 
 ```bash
-git clone https://github.com/hiteshchoudhary/Codebox.git
+git clone https://github.com/404reese/Codebox.git
 cd Codebox
 
 npm install
@@ -93,7 +93,7 @@ The dev stack ships with the token `dev-token` already set:
 curl -X POST "http://localhost:3000/submissions?wait=true" \
   -H "Content-Type: application/json" \
   -H "X-Auth-Token: dev-token" \
-  -d '{"source_code": "print(\"Chai aur Code!\")", "language_id": 71}'
+  -d '{"source_code": "print(\"Hello, CodeBox!\")", "language_id": 71}'
 ```
 
 The API is on port 3000 directly — Caddy is not involved in this mode.
@@ -104,7 +104,8 @@ The API is on port 3000 directly — Caddy is not involved in this mode.
 
 Prebuilt images are published to Docker Hub, and the production stack needs
 **no language images**: the worker image already bundles gcc, JDK 17, Python,
-Node and TypeScript, and isolate runs the code inside that container. So a
+Node and TypeScript, plus NumPy, Matplotlib and pandas. Isolate runs the code
+inside that container. So a
 whole deployment is one file plus a `.env`.
 
 On a fresh server with Docker installed:
@@ -112,12 +113,15 @@ On a fresh server with Docker installed:
 ```bash
 mkdir -p /opt/codebox && cd /opt/codebox
 
-# Grab the single-file compose
-curl -fsSLO https://raw.githubusercontent.com/hiteshchoudhary/Codebox/main/docker-compose.hub.yml
-mv docker-compose.hub.yml docker-compose.yml
+# Grab the single-file compose from this repository
+curl -fsSL https://raw.githubusercontent.com/404reese/Codebox/main/docker-compose.hub.yml \
+  -o docker-compose.yml
 
 # Generate secrets and write .env
 cat > .env <<EOF
+CODEBOX_IMAGE_NAMESPACE=riddheshc
+CODEBOX_VERSION=python-libs-v1
+
 AUTH_TOKEN=$(openssl rand -hex 32)
 METRICS_TOKEN=$(openssl rand -hex 16)
 GRAFANA_PASSWORD=$(openssl rand -hex 16)
@@ -132,6 +136,9 @@ WORKER_MEMORY=4G
 WORKER_CONCURRENCY=2
 EOF
 
+chmod 600 .env
+
+docker compose pull
 docker compose up -d
 ```
 
@@ -139,6 +146,8 @@ Then check it and grab your token:
 
 ```bash
 curl http://localhost/health
+docker compose ps
+docker compose exec worker python3 -c "import numpy, pandas, matplotlib; print('All libraries available')"
 grep AUTH_TOKEN .env
 ```
 
@@ -148,17 +157,34 @@ rather paste than curl, open the file on GitHub and paste it straight into
 `docker-compose.yml` on the server — it needs Docker Compose v2.23 or newer
 (`docker compose version`).
 
-To upgrade later:
+To switch an existing deployment to your published images, keep your existing
+`.env` secrets and add or update these settings:
 
-```bash
-docker compose pull && docker compose up -d
+```dotenv
+CODEBOX_IMAGE_NAMESPACE=riddheshc
+CODEBOX_VERSION=python-libs-v1
 ```
 
-Pin a release instead of tracking `latest` by adding `CODEBOX_VERSION=v1.2.3`
-to `.env`.
+Then pull your images and recreate the API and worker:
+
+```bash
+cd /opt/codebox
+docker compose pull api worker
+docker compose up -d api worker
+```
+
+For future upgrades, set `CODEBOX_VERSION` to a tag published for both images
+and repeat those commands. The default is `python-libs-v1`; set `latest`
+explicitly if you want the latest automated build. Do not rerun the fresh-server
+`.env` generation command on an existing deployment, because it replaces secrets.
+
+The GitHub download requires these changes to be pushed to `404reese/Codebox`
+on `main`. Until then, copy your local `docker-compose.hub.yml` to the server as
+`docker-compose.yml`, or use the upstream Compose file with the `.env` overrides
+above. Docker Hub images and GitHub source files are published separately.
 
 > This path uses the prebuilt images. Build from source instead — modes 2 and 3
-> below — when you have changed the code.
+> below — or build and publish your own updated images when you change the code.
 
 ---
 
@@ -171,7 +197,7 @@ private network. CodeBox is served as plain HTTP on port 80 of the server's IP.
 ```bash
 ssh root@<server-ip>
 
-git clone https://github.com/hiteshchoudhary/Codebox.git /opt/codebox
+git clone https://github.com/404reese/Codebox.git /opt/codebox
 cd /opt/codebox
 
 # Run setup with NO argument -> IP mode
@@ -227,7 +253,7 @@ panel firewall (Hostinger, DigitalOcean, AWS security groups) as well as `ufw`.
 ```bash
 ssh root@<server-ip>
 
-git clone https://github.com/hiteshchoudhary/Codebox.git /opt/codebox
+git clone https://github.com/404reese/Codebox.git /opt/codebox
 cd /opt/codebox
 
 # Pass the domain as the argument -> HTTPS mode
@@ -387,7 +413,7 @@ systemctl start fail2ban
 ssh deploy@your-droplet-ip
 
 # Clone and setup
-sudo git clone https://github.com/chaicode/codebox.git /opt/codebox
+sudo git clone https://github.com/404reese/Codebox.git /opt/codebox
 sudo chown -R deploy:deploy /opt/codebox
 cd /opt/codebox
 
@@ -418,8 +444,8 @@ Hub on every push to `main`, on every `v*` tag, and on manual dispatch:
 
 | Image | From |
 |-------|------|
-| `hiteshchoudhary/codebox-api` | `docker/api/Dockerfile` |
-| `hiteshchoudhary/codebox-worker` | `docker/worker/Dockerfile` |
+| `riddheshc/codebox-api` | `docker/api/Dockerfile` |
+| `riddheshc/codebox-worker` | `docker/worker/Dockerfile` |
 
 Tags pushed: `latest` (main), the git tag (`v1.2.3`), and the short SHA.
 
@@ -428,16 +454,36 @@ Tags pushed: `latest` (main), the git tag (`v1.2.3`), and the short SHA.
 
 | Secret | Value |
 |--------|-------|
-| `DOCKERHUB_USERNAME` | your Docker Hub username |
+| `DOCKERHUB_USERNAME` | `riddheshc` |
 | `DOCKERHUB_TOKEN` | an access token from [hub.docker.com/settings/security](https://hub.docker.com/settings/security), scope **Read & Write** — a token, not your password |
 
 Both repositories must exist on Docker Hub (or the account must allow
 auto-creation) before the first push.
 
 Images are built for **linux/amd64 only**. `docker/worker/Dockerfile` hardcodes
-`x86_64-linux-gnu` and `java-17-openjdk-amd64`, and every mainstream VPS is
-amd64 — but this means the published images will not run on an ARM server or
-an Apple Silicon Mac.
+`x86_64-linux-gnu` and `java-17-openjdk-amd64`. Check `uname -m` on the VPS:
+`x86_64` matches these images; `aarch64` requires changes for ARM. On Apple
+Silicon, running these images requires amd64 emulation.
+
+### Build, test and publish manually
+
+Start Docker Desktop with its Linux engine running. From the repository root,
+run these commands (also valid in Windows PowerShell):
+
+```bash
+docker login --username riddheshc
+docker build --platform linux/amd64 -f docker/api/Dockerfile -t riddheshc/codebox-api:python-libs-v1 .
+docker build --platform linux/amd64 -f docker/worker/Dockerfile -t riddheshc/codebox-worker:python-libs-v1 .
+docker run --rm --entrypoint python3 riddheshc/codebox-worker:python-libs-v1 -c "import numpy, pandas, matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt; plt.plot([1,2,3]); plt.savefig('/tmp/test.png'); print('Libraries imported and plot saved')"
+docker push riddheshc/codebox-api:python-libs-v1
+docker push riddheshc/codebox-worker:python-libs-v1
+```
+
+Use your Docker Hub access token at the login password prompt. For a new release,
+replace `python-libs-v1` in both build and push commands with a new tag, then
+update `CODEBOX_VERSION` on the server. The automated workflow publishes
+`latest`, Git release tags and SHA tags; it does not automatically publish the
+manual `python-libs-v1` tag.
 
 ---
 
@@ -594,17 +640,11 @@ Import these into Postman for testing:
 
 ## Contributing
 
-We welcome contributions! Please check out the [ChaiCode GitHub](https://github.com/chaicode) for guidelines.
+Contributions are welcome. Open an issue or pull request in
+[404reese/Codebox](https://github.com/404reese/Codebox).
 
 ---
 
 ## License
 
 MIT
-
----
-
-<p align="center">
-  <b>Built with ☕ by <a href="https://chaicode.com">ChaiCode</a></b><br>
-  <i>Home for Programmers</i>
-</p>
